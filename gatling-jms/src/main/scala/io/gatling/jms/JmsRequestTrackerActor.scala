@@ -42,6 +42,18 @@ case class MessageSent(
   title: String)
 
 /**
+ * Advise actor a message was sent to JMS provider and no message will be replied
+ * @author garnaud25@gmail.com
+ */
+case class MessageSentWithNoReply(
+  requestId: String,
+  startSend: Long,
+  endSend: Long,
+  session: Session,
+  next: ActorRef,
+  title: String)
+
+/**
  * Advise actor a response message was received from JMS provider
  * @author jasonk@bluedevel.com
  */
@@ -74,6 +86,10 @@ class JmsRequestTrackerActor extends BaseActor with DataWriterClient {
           val sentMessage = (startSend, endSend, checks, session, next, title)
           sentMessages += corrId -> sentMessage
       }
+
+    // message was sent; no reply are expected so result can be processed
+    case MessageSentWithNoReply(corrId, startSend, endSend, session, next, title) =>
+      processMessage(session, startSend, endSend, endSend, Nil, null, next, title)
 
     // message was received; publish to the datawriter and remove from the hashmap
     case MessageReceived(corrId, received, message) =>

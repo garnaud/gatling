@@ -31,4 +31,23 @@ class JmsIntegrationSpec extends JmsMockingSpec {
     session("content").as[String] shouldBe "HI"
   }
 
+  "gatling-jms" should "send a JMS message with no reply" in ActorSupport { implicit testKit =>
+
+    val requestQueue = JmsQueue("request")
+
+    jmsMock(requestQueue, {
+      case tm: TextMessage => tm.getText.toUpperCase
+    })
+
+    val session = runScenario(
+      scenario("Jms upperCase")
+        .exec(
+          jms("toUpperCase")
+            .noreply
+            .destination(requestQueue)
+            .textMessage("<hello>hi</hello>")))
+
+    session.isFailed shouldBe false
+  }
+
 }
